@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { avatarFor, scenes } from '../assets/media';
 
 const reels = [
-  { id: 1, author: 'Аня', avatar: 'https://i.pravatar.cc/80?img=1', image: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=700&q=85', title: 'Утро начинается с воды из родника', sound: 'Звуки Очага · оригинал', likes: 128 },
-  { id: 2, author: 'Земля', avatar: 'https://i.pravatar.cc/80?img=12', image: 'https://images.unsplash.com/photo-1492496913980-501348b61469?auto=format&fit=crop&w=700&q=85', title: 'Как мы готовим грядки вместе', sound: 'Кооператив «Земля»', likes: 84 },
-  { id: 3, author: 'Гриша', avatar: 'https://i.pravatar.cc/80?img=3', image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=700&q=85', title: 'Глина, огонь и один хороший вечер', sound: 'Голос Очага', likes: 216 },
+  { id: 1, author: 'Аня', avatar: avatarFor('Аня', '#c14b57', '#e88f4e'), image: scenes.morning, title: 'Утро начинается с воды из родника', sound: 'Звуки Очага · оригинал', likes: 128 },
+  { id: 2, author: 'Земля', avatar: avatarFor('Земля', '#3c5c34', '#6f9b4a'), image: scenes.garden, title: 'Как мы готовим грядки вместе', sound: 'Кооператив «Земля»', likes: 84 },
+  { id: 3, author: 'Гриша', avatar: avatarFor('Гриша', '#b05a2c', '#e09a52'), image: scenes.pottery, title: 'Глина, огонь и один хороший вечер', sound: 'Голос Очага', likes: 216 },
 ];
 
 export default function ReelsPage() {

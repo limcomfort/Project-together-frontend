@@ -1,39 +1,28 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import type { ReactNode } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import PhoneFrame from './PhoneFrame';
+import Icon from './icons';
+import { me } from '../data/chats';
 
-const navItems = [
-  { to: '/chats', icon: '⌂', label: 'Лента' },
-  { to: '/search', icon: '⌕', label: 'Поиск' },
-  { to: '/reels', icon: '▻', label: 'Reels' },
-  { to: '/chat/1', icon: '◌', label: 'Сообщения' },
-  { to: '/profile', icon: '◉', label: 'Профиль' },
-];
+const isMainTab = (pathname: string) =>
+  ['/chats', '/search', '/reels', '/profile'].some((tab) => pathname.startsWith(tab));
 
-export default function AppShell({ children }: { children?: ReactNode }) {
-  const navigate = useNavigate();
-
+export default function AppShell() {
+  const { pathname } = useLocation();
+  const tabs = isMainTab(pathname);
   return (
-    <PhoneFrame><div className="app-shell">
-      <aside className="sidebar">
-        <button className="brand" onClick={() => navigate('/chats')} aria-label="На главную">
-          <span className="brand-mark">⌁</span>
-          <span><strong>Очаг</strong><small>КОПЕРАТИВ</small></span>
-        </button>
-        <nav className="side-nav" aria-label="Основная навигация">
-          {navItems.map((item) => (
-            <NavLink key={item.to} to={item.to} className={({ isActive }) => `side-link${isActive ? ' active' : ''}`}>
-              <span>{item.icon}</span>{item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <button className="account-card" onClick={() => navigate('/profile')}>
-          <img src="https://i.pravatar.cc/80?img=5" alt="Михаил" />
-          <span><strong>Михаил</strong><small>+7 (999) ***-45-67</small></span>
-          <span className="status-dot" />
-        </button>
-      </aside>
-      {children ?? <Outlet />}
-    </div></PhoneFrame>
+    <PhoneFrame>
+      <div className="app">
+        <div className="app-scroll"><Outlet /></div>
+        {tabs && (
+          <nav className="tabbar" aria-label="Навигация">
+            <NavLink to="/chats" aria-label="Лента">{({ isActive }) => <span className={`tab${isActive ? ' on' : ''}`}><Icon name="home" filled={isActive} /></span>}</NavLink>
+            <NavLink to="/search" aria-label="Поиск">{({ isActive }) => <span className={`tab${isActive ? ' on' : ''}`}><Icon name="search" filled={isActive} strokeWidth={isActive ? 2.2 : undefined} /></span>}</NavLink>
+            <NavLink to="/stub/Создать" aria-label="Создать"><span className="tab"><Icon name="plus" /></span></NavLink>
+            <NavLink to="/reels" aria-label="Reels">{({ isActive }) => <span className={`tab${isActive ? ' on' : ''}`}><Icon name="reels" filled={isActive} /></span>}</NavLink>
+            <NavLink to="/profile" aria-label="Профиль">{({ isActive }) => <span className={`tab tab-avatar${isActive ? ' on' : ''}`}><img src={me.avatar} alt="Михаил" /></span>}</NavLink>
+          </nav>
+        )}
+      </div>
+    </PhoneFrame>
   );
 }

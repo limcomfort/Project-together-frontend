@@ -9,6 +9,7 @@ import type {
   LoginRequest,
   AuthResponse
 } from '../types';
+import { chats } from '../data/chats';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -99,35 +100,16 @@ class ApiClient {
   // Chats API (mock)
   async getChats(): Promise<Chat[]> {
     // Mock data - replace with real endpoint
-    return [
-      {
-        id: '1',
-        name: 'Аня',
-        avatar: 'https://i.pravatar.cc/150?img=1',
-        type: 'private',
-        lastMessage: 'Привезла новые глиняные чашки...',
-        lastMessageTime: '12:30',
-        unreadCount: 2,
-      },
-      {
-        id: '2',
-        name: 'Миша Мельник',
-        avatar: 'https://i.pravatar.cc/150?img=2',
-        type: 'private',
-        lastMessage: 'Договорились. Завтра в Очаге!',
-        lastMessageTime: 'Вчера',
-        unreadCount: 0,
-      },
-      {
-        id: '3',
-        name: 'Кооператив «Земля»',
-        type: 'cooperative',
-        lastMessage: 'Катя: Обсуждаем план грядок на весну',
-        lastMessageTime: 'Пн',
-        unreadCount: 0,
-        participantCount: 12,
-      },
-    ];
+    return chats.map((chat) => ({
+      id: chat.id,
+      name: chat.name,
+      avatar: chat.avatar,
+      type: chat.group ? 'cooperative' as const : 'private' as const,
+      lastMessage: chat.preview,
+      lastMessageTime: chat.time,
+      unreadCount: chat.unread ?? 0,
+      ...(chat.group ? { participantCount: 12 } : {}),
+    }));
   }
 
   async getChatById(id: string): Promise<Chat> {
@@ -147,7 +129,7 @@ class ApiClient {
         chatId,
         senderId: '1',
         senderName: 'Катя',
-        senderAvatar: 'https://i.pravatar.cc/150?img=1',
+        senderAvatar: chats[0].avatar,
         content: '@Лука сможешь забрать семена у Ани вечером?',
         mentions: ['Лука'],
         createdAt: '2024-01-15T14:02:00Z',
