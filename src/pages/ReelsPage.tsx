@@ -1,16 +1,66 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { avatarFor, scenes } from '../assets/media';
-
-const reels = [
-  { id: 1, author: 'Аня', avatar: avatarFor('Аня', '#c14b57', '#e88f4e'), image: scenes.morning, title: 'Утро начинается с воды из родника', sound: 'Звуки Очага · оригинал', likes: 128 },
-  { id: 2, author: 'Земля', avatar: avatarFor('Земля', '#3c5c34', '#6f9b4a'), image: scenes.garden, title: 'Как мы готовим грядки вместе', sound: 'Кооператив «Земля»', likes: 84 },
-  { id: 3, author: 'Гриша', avatar: avatarFor('Гриша', '#b05a2c', '#e09a52'), image: scenes.pottery, title: 'Глина, огонь и один хороший вечер', sound: 'Голос Очага', likes: 216 },
-];
+import Icon from '../components/icons';
+import { reels } from '../data/content';
+import { reelsPosters } from '../assets/media';
 
 export default function ReelsPage() {
   const navigate = useNavigate();
-  const [liked, setLiked] = useState<number[]>([]);
-  const [saved, setSaved] = useState<number[]>([]);
-  return <main className="main-panel reels-page"><header className="reels-header"><div><span className="feed-kicker">ЖИВЫЕ МОМЕНТЫ</span><h1>Reels Очага</h1></div><button onClick={() => navigate('/search')} aria-label="Найти reels">⌕</button></header><div className="reels-feed">{reels.map((reel) => <article className="reel-card" key={reel.id}><img className="reel-image" src={reel.image} alt={reel.title} /><div className="reel-shade" /><div className="reel-info"><div className="reel-author"><img src={reel.avatar} alt={reel.author} /><strong>{reel.author}</strong><button>Подписаться</button></div><h2>{reel.title}</h2><p>♫ {reel.sound}</p></div><div className="reel-actions"><button className={liked.includes(reel.id) ? 'active' : ''} onClick={() => setLiked((items) => items.includes(reel.id) ? items.filter((id) => id !== reel.id) : [...items, reel.id])}><span>♥</span><small>{reel.likes + (liked.includes(reel.id) ? 1 : 0)}</small></button><button onClick={() => navigate(`/chat/${reel.id}`)}><span>◌</span><small>Ответить</small></button><button className={saved.includes(reel.id) ? 'active' : ''} onClick={() => setSaved((items) => items.includes(reel.id) ? items.filter((id) => id !== reel.id) : [...items, reel.id])}><span>⌑</span><small>Сохранить</small></button></div></article>)}</div></main>;
+  const [liked, setLiked] = useState<Set<number>>(new Set());
+  const [active, setActive] = useState(reels[0].id);
+  const [muted, setMuted] = useState(true);
+  const [paused, setPaused] = useState<number | null>(null);
+  const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const id = Number((entry.target as HTMLElement).dataset.reelId);
+        const video = videoRefs.current[id];
+        if (!video) return;
+        if (entry.isIntersecting) { setActive(id); video.play().catch(() => {}); }
+        else { video.pause(); video.currentTime = 0; }
+      });
+    }, { threshold: 0.6 });
+    document.querySelectorAll('[data-reel-id]').forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  const togglePlay = (id: number) => {
+    const video = videoRefs.current[id];
+    if (!video) return;
+    if (video.paused) { video.play().catch(() => {}); setPaused(null); }
+    else { video.pause(); setPaused(id); }
+  };
+
+  return <div className="reels-page">
+    <div className="reels-scroll">
+      {reels.map((reel) => <section className="reel" key={reel.id} data-reel-id={reel.id}>
+        <video ref={(el) => { videoRefs.current[reel.id] = el; }} src={reel.video} poster={reelsPosters[reel.id]} loop playsInline muted={muted} preload={reel.id === active ? 'auto' : 'metadata'} />
+        <button className={`reel-pause${paused === reel.id ? ' show' : ''}`} onClick={() => togglePlay(reel.id)} aria-label="Пауза"><Icon name="pause" size={54} /></button>
+        <div className="reel-overlay">
+          <div className="reel-bottom">
+            <div className="reel-meta">
+              <div className="reel-author">
+                <img src={reel.avatar} alt={reel.author} />
+                <strong>{reel.username}</strong>
+                <button onClick={() => navigate(`/chat/${reel.chatId}`)}>Подписаться</button>
+              </div>
+              <p className="reel-caption">{reel.caption}</p>
+              <div className="reel-music"><Icon name="music" size={14} /><marquee scrollamount="2">{reel.music}</marquee></div>
+            </div>
+            <div className="reel-rail">
+              <button className={liked.has(reel.id) ? 'liked' : ''} onClick={() => setLiked((prev) => { const next = new Set(prev); next.has(reel.id) ? next.delete(reel.id) : next.add(reel.id); return next; })}>
+                <Icon name="heart" size={27} filled={liked.has(reel.id)} />
+                <small>{((reel.likes + (liked.has(reel.id) ? 1 : 0)) / 1000).toFixed(1)} тыс.</small>
+              </button>
+              <button onClick={() => navigate(`/chat/${reel.chatId}`)}><Icon name="comment" size={26} /><small>{reel.comments}</small></button>
+              <button onClick={() => navigate(`/chat/${reel.chatId}`)}><Icon name="share" size={26} /><small>Отправить</small></button>
+              <button onClick={() => setMuted((m) => !m)}><Icon name={muted ? 'mute' : 'sound'} size={24} /></button>
+            </div>
+          </div>
+        </div>
+      </section>)}
+    </div>
+  </div>;
 }

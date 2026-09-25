@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import PhoneFrame from './PhoneFrame';
 import Icon from './icons';
-import { me } from '../data/chats';
+import { me } from '../data/content';
 
 const isMainTab = (pathname: string) =>
   ['/chats', '/search', '/reels', '/profile'].some((tab) => pathname.startsWith(tab));

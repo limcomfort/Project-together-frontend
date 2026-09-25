@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import ChatsPage from './pages/ChatsPage';
 import ChatPage from './pages/ChatPage';
+import DmPage from './pages/DmPage';
 import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage';
 import VoiceCallPage from './pages/VoiceCallPage';
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/stub/:name" element={<PhoneFrame><StubPage /></PhoneFrame>} />
         <Route element={<AppShell />}>
           <Route path="/chats" element={<ChatsPage />} />
+          <Route path="/dm" element={<DmPage />} />
           <Route path="/chat/:id" element={<ChatPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/search" element={<SearchPage />} />

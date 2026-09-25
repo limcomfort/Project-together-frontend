@@ -1,4 +1,5 @@
 import { avatarFor, artFor } from '../assets/media';
+import type { FeedPost } from '../types/feed';
 
 export type ChatInfo = {
   id: string;
@@ -32,11 +33,13 @@ export const stories = [
   { name: 'Пётр', avatar: avatarFor('Пётр', '#3f5d6e', '#6e93a8') },
 ];
 
-export const posts = [
+export const feedPosts: FeedPost[] = [
   { id: 'p1', author: 'Аня', username: 'anya.rodnik', avatar: avatarFor('Аня', '#c14b57', '#e88f4e'), image: artFor('peach'), caption: 'Тихое утро у родника. Вода сегодня особенно вкусная', likes: 1284, comments: 48, time: '2 ч' },
   { id: 'p2', author: 'Кооператив «Земля»', username: 'coop.zemlya', avatar: avatarFor('Земля', '#3c5c34', '#6f9b4a'), image: artFor('forest'), caption: 'Грядки готовы к весне. Работали всем кооперативом', likes: 856, comments: 31, time: '5 ч' },
   { id: 'p3', author: 'Гриша', username: 'grisha.ognivo', avatar: avatarFor('Гриша', '#b05a2c', '#e09a52'), image: artFor('violet'), caption: 'Новая партия кружек вышла из печи. Глина, огонь и терпение', likes: 2341, comments: 96, time: '8 ч' },
 ];
+
+export const posts = feedPosts;
 
 export const reels = [
   { id: 1, chatId: '1', author: 'Аня', username: 'anya.rodnik', avatar: avatarFor('Аня', '#c14b57', '#e88f4e'), video: '/reels/r1.mp4', caption: 'Закат сегодня нереальный. Ловите момент', music: 'Оригинальный звук · Аня', likes: 12400, comments: 214 },

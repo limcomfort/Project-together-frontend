@@ -1,10 +1,43 @@
-import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { me } from '../data/chats';
+import Icon from '../components/icons';
+import { me, highlights, profileGrid, savedGrid } from '../data/content';
 
 export default function ProfilePage() {
-  const navigate = useNavigate();
-  const [notifications, setNotifications] = useState(true);
-  const [nightMode, setNightMode] = useState(true);
-  return <main className="main-panel profile-page"><header className="page-header"><h1>Профиль</h1><p>Ваши настройки и данные</p></header><section className="profile-hero"><img src={me.avatar} alt="Михаил" /><div><h2>Михаил (Глиняный мастер)</h2><p>+7 (999) ***-45-67</p><small>«Не остывать никогда, делай Очаг созданным для блага общины»</small></div><span className="profile-badge">Староста артели</span></section><div className="profile-grid"><article className="settings-card"><span className="section-label">МНЕНИЯ КООПЕРАТОРОВ</span><p>«Михаил помог запустить гончарную печь в нашем третьем кооперативе. Мудрый человек!» — Григорий</p><p>«Отличная глина у него, чашки выходят легкими и прочными.» — Аня</p></article><article className="settings-card"><span className="section-label">КООПЕРАТИВ И ДЕЛА</span><p>✓ Заготовка глины для весеннего сезона</p><p>✓ Мастер-класс у Очага в эту субботу</p></article></div><article className="settings-card setting-row"><span><strong>Мягкие уведомления</strong><small>Сообщать о новых разговорах</small></span><button className={`switch${notifications ? ' on' : ''}`} onClick={() => setNotifications(!notifications)} aria-label="Уведомления"><i /></button></article><article className="settings-card setting-row"><span><strong>Темный Очаг</strong><small>Ночной режим Очага</small></span><button className={`switch${nightMode ? ' on' : ''}`} onClick={() => setNightMode(!nightMode)} aria-label="Темный режим"><i /></button></article><button className="logout-button" onClick={() => navigate('/')}>Выйти из Очага</button></main>;
+  const [tab, setTab] = useState<'grid' | 'reels' | 'saved'>('grid');
+  const stats = [['128', 'публикаций'], ['4 892', 'подписчиков'], ['351', 'подписок']] as const;
+  return <div className="page fade-item">
+    <header className="profile-top">
+      <h1>{me.username} <Icon name="chevron" size={15} /></h1>
+      <span className="spacer" style={{ flex: 1 }} />
+      <button className="icon-button" aria-label="Создать"><Icon name="plus" /></button>
+      <button className="icon-button" aria-label="Меню"><Icon name="menu" /></button>
+    </header>
+    <section className="profile-hero">
+      <span className="profile-avatar"><img src={me.avatar} alt="Михаил" /></span>
+      <div className="profile-stats">{stats.map(([value, label]) => <div key={label}><b>{value}</b><span>{label}</span></div>)}</div>
+    </section>
+    <section className="profile-bio">
+      <strong>Михаил · гончарный мастер</strong><br />
+      Коператив «Очаг» 🏺 Глина, печь и добрые люди<br />
+      Мастер-класс каждую субботу у мельницы
+    </section>
+    <section className="profile-actions">
+      <button className="btn">Изменить профиль</button>
+      <button className="btn">Поделиться</button>
+      <button className="btn icon-flex" aria-label="Найти людей"><Icon name="chevron" size={16} /></button>
+    </section>
+    <section className="highlight-strip">
+      {highlights.map((item) => <button className="highlight" key={item.name}><i><img src={item.image} alt={item.name} /></i><small>{item.name}</small></button>)}
+    </section>
+    <nav className="profile-tabs">
+      <button className={tab === 'grid' ? 'on' : ''} onClick={() => setTab('grid')} aria-label="Публикации"><Icon name="grid" size={22} /></button>
+      <button className={tab === 'reels' ? 'on' : ''} onClick={() => setTab('reels')} aria-label="Reels"><Icon name="reels" size={22} /></button>
+      <button className={tab === 'saved' ? 'on' : ''} onClick={() => setTab('saved')} aria-label="Сохранённое"><Icon name="bookmark" size={22} /></button>
+    </nav>
+    <section className="profile-grid">
+      {tab === 'grid' && profileGrid.map((item) => <article key={item.id}><img src={item.image} alt="Публикация" loading="lazy" /></article>)}
+      {tab === 'reels' && profileGrid.slice(0, 6).map((item) => <article key={item.id}><img src={item.image} alt="Reels" loading="lazy" /></article>)}
+      {tab === 'saved' && savedGrid.map((item) => <article key={item.id}><img src={item.image} alt="Сохранённое" loading="lazy" /></article>)}
+    </section>
+  </div>;
 }

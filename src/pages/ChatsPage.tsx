@@ -1,21 +1,172 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { chats, chatById, me } from '../data/chats';
-import { avatarFor, scenes } from '../assets/media';
-import ChatSwitcher from '../components/ChatSwitcher';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Icon from "../components/icons";
+import { stories, me } from "../data/content";
+import { avatarFor, artFor } from "../assets/media";
+import { api } from "../api/client";
+import type { FeedPost } from "../types/feed";
+import { feedPosts as fallbackPosts } from "../data/content";
 
-const stories = [
-  { name: 'Аня', avatar: chatById('1').avatar, accent: '#ef3737' },
-  { name: 'Миша', avatar: chatById('2').avatar, accent: '#e1ad00' },
-  { name: 'Земля', avatar: chatById('3').avatar, accent: '#d6763e' },
-  { name: 'Гриша', avatar: avatarFor('Гриша', '#b05a2c', '#e09a52'), accent: '#ef8a42' },
+const palette = [
+  ["#c14b57", "#e88f4e"],
+  ["#8a6d2f", "#c2a23f"],
+  ["#3c5c34", "#6f9b4a"],
+  ["#7a4a6b", "#b07a9e"],
+  ["#3f5d6e", "#6e93a8"],
+  ["#b05a2c", "#e09a52"],
 ];
+const artVariants = [
+  "peach",
+  "forest",
+  "violet",
+  "ocean",
+  "candy",
+  "mint",
+] as const;
 
 export default function ChatsPage() {
   const navigate = useNavigate();
-  const [query, setQuery] = useState('');
-  const [note, setNote] = useState('');
-  const [postedNote, setPostedNote] = useState('');
-  const visibleChats = chats.filter((chat) => `${chat.name} ${chat.preview}`.toLowerCase().includes(query.toLowerCase()));
-  return <section className="workspace"><aside className="chat-list-panel"><header className="panel-heading"><div className="panel-title-row"><span><h1>Разговоры</h1><p>Ваш круг близкого общения</p></span><button className="panel-add" onClick={() => navigate('/chat/1')} aria-label="Новый разговор">＋</button></div><input className="search-box" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="⌕  Поиск собеседников..." /></header><div className="conversation-list">{visibleChats.map((chat) => <button className="conversation-item" key={chat.id} onClick={() => navigate(`/chat/${chat.id}`)}><img src={chat.avatar} alt="" /><span><strong>{chat.name}</strong><small>{chat.preview}</small></span><span className="conversation-time">{chat.time}{chat.unread ? ` · ${chat.unread}` : ''}</span></button>)}{!visibleChats.length && <p className="muted-copy">Никого не нашли</p>}</div><button className="list-footer" onClick={() => navigate('/bookmarks')}>⌑ <span>Сохраненные моменты</span><b>›</b></button></aside><main className="main-panel home-feed"><ChatSwitcher /><header className="feed-header"><div><span className="feed-kicker">ПРОСТРАНСТВО ОЧАГА</span><h1>Добрый вечер, Михаил</h1><p>Что происходит у твоего круга сегодня</p></div><button className="feed-action" onClick={() => navigate('/profile')} aria-label="Открыть профиль"><img src={me.avatar} alt="Михаил" /></button></header><section className="story-strip"><div className="story-add" onClick={() => setPostedNote('Новая искра добавлена')}><span>＋</span><small>Твоя искра</small></div>{stories.map((story) => <button className="story-item" key={story.name} onClick={() => setPostedNote(`Открыта история ${story.name}`)}><img src={story.avatar} alt={story.name} style={{ borderColor: story.accent }} /><small>{story.name}</small></button>)}</section><section className="composer-card"><img src={me.avatar} alt="Михаил" /><div className="composer-inner"><input value={note} onChange={(event) => setNote(event.target.value)} placeholder="Чем поделишься у Очага?" onKeyDown={(event) => { if (event.key === 'Enter' && note.trim()) { setPostedNote(note.trim()); setNote(''); } }} /><div className="composer-tools"><span>Фото</span><span>Голос</span><span>Опрос</span><button onClick={() => { if (note.trim()) { setPostedNote(note.trim()); setNote(''); } }}>Опубликовать</button></div></div></section>{postedNote && <article className="feed-post"><div className="post-heading"><img src={me.avatar} alt="Михаил" /><span><strong>Михаил</strong><small>только что · у костра</small></span><button onClick={() => setPostedNote('')}>×</button></div><p>{postedNote}</p><div className="post-reactions"><button>♡ 12</button><button>◌ 4 ответа</button><button>⌑ Сохранить</button></div></article>}<section className="activity-card"><div className="activity-heading"><span><span className="feed-kicker">СЕЙЧАС У КОСТРА</span><h2>Кооператив «Земля»</h2></span><button onClick={() => navigate('/chat/3')}>Открыть →</button></div><div className="activity-image"><img src={scenes.campfire} alt="Костер в кооперативе" /><div><b>12</b><small>у костра</small></div></div><p>Сегодня собираемся у старой мельницы. Берем чай, глину и истории, которые не хочется оставлять в заметках.</p><div className="activity-footer"><span>🔥 8 участников уже здесь</span><button onClick={() => navigate('/chat/3')}>Присоединиться</button></div></section></main></section>;
+  const [posts, setPosts] = useState<FeedPost[]>(fallbackPosts);
+  const [liked, setLiked] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    let alive = true;
+    api
+      .getPosts()
+      .then((list) => {
+        if (!alive || !list.length) return;
+        const fromDb: FeedPost[] = list.map((post, index) => ({
+          id: `db-${post.id}`,
+          author: post.author,
+          username: post.author.toLowerCase().replace(/[^a-zа-яё0-9]+/gi, "."),
+          avatar: avatarFor(
+            post.author,
+            ...(palette[index % palette.length] as [string, string])
+          ),
+          image: artFor(artVariants[index % artVariants.length]),
+          caption: post.content,
+          likes: 148 + index * 63,
+          comments: 3 + index * 5,
+          time: "сейчас",
+        }));
+        setPosts([...fromDb, ...fallbackPosts]);
+      })
+      .catch(() => {
+        /* MongoDB недоступна — показываем локальные посты */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const toggleLike = (id: string) =>
+    setLiked((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  const likeCount = (post: FeedPost) =>
+    post.likes + (liked.has(post.id) ? 1 : 0);
+  return (
+    <div className="page fade-item">
+      <header className="feed-top">
+        <span className="feed-logo">Ochag</span>
+        <div className="feed-top-actions">
+          <button
+            className="icon-button"
+            onClick={() => navigate("/bookmarks")}
+            aria-label="Уведомления"
+          >
+            <Icon name="heart" />
+          </button>
+          <span className="badge-dot">3</span>
+          <button
+            className="icon-button"
+            onClick={() => navigate("/dm")}
+            aria-label="Сообщения"
+          >
+            <Icon name="messenger" />
+          </button>
+        </div>
+      </header>
+      <section className="story-strip">
+        <button
+          className="story muted story-add"
+          onClick={() => navigate("/stub/Создать")}
+        >
+          <span className="story-ring">
+            <img src={me.avatar} alt="Ваша история" />
+          </span>
+          <span>＋</span>
+          <small>Ваша история</small>
+        </button>
+        {stories.map((story) => (
+          <button
+            className="story"
+            key={story.name}
+            onClick={() => navigate("/stub/История")}
+          >
+            <span className="story-ring">
+              <img src={story.avatar} alt={story.name} />
+            </span>
+            <small>{story.name}</small>
+          </button>
+        ))}
+      </section>
+      {posts.map((post) => (
+        <article className="post" key={post.id}>
+          <header className="post-header">
+            <img src={post.avatar} alt={post.author} />
+            <span className="post-id">
+              <strong>{post.username}</strong>
+              <small>{post.time}</small>
+            </span>
+            <button className="icon-button" aria-label="Ещё">
+              <Icon name="more" />
+            </button>
+          </header>
+          <img
+            className="post-image"
+            src={post.image}
+            alt={post.caption}
+            onDoubleClick={() => toggleLike(post.id)}
+          />
+          <div className="post-actions">
+            <button
+              className={liked.has(post.id) ? "liked" : ""}
+              onClick={() => toggleLike(post.id)}
+              aria-label="Нравится"
+            >
+              <Icon name="heart" filled={liked.has(post.id)} />
+            </button>
+            <button aria-label="Комментарий">
+              <Icon name="comment" />
+            </button>
+            <button aria-label="Поделиться">
+              <Icon name="share" />
+            </button>
+            <span className="spacer" />
+            <button aria-label="Сохранить">
+              <Icon name="bookmark" />
+            </button>
+          </div>
+          <p className="post-likes">
+            <b>{likeCount(post).toLocaleString("ru-RU")}</b> отметок «Нравится»
+          </p>
+          <p className="post-caption">
+            <b>{post.username}</b> {post.caption}
+          </p>
+          <p className="post-view-comments">
+            Посмотреть все комментарии ({post.comments})
+          </p>
+          <div className="post-add-comment">
+            <img
+              src={me.avatar}
+              alt=""
+              style={{ width: 24, height: 24, borderRadius: "50%" }}
+            />
+            Добавьте комментарий…
+          </div>
+        </article>
+      ))}
+    </div>
+  );
 }
